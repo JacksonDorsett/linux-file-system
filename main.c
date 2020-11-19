@@ -33,6 +33,7 @@ MINODE *iget();
 #include "cd_ls_pwd.c"
 #include "mkdir_creat.c"
 #include "link_unlink.c"
+#include "symlink_readlink.c"
 int init()
 {
   int i, j;
@@ -139,6 +140,8 @@ int main(int argc, char *argv[ ])
 		creat_file(pathname);
 	if (strcmp(cmd, "link")==0)
 		mylink(pathname, pathname2);
+	if (strcmp(cmd, "symlink") == 0)
+		mysymlink(pathname, pathname2);
     if (strcmp(cmd, "quit")==0)
        quit();
   }

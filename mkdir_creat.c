@@ -191,6 +191,8 @@ int my_creat(MINODE * pip, char* name){
 	iput(mip);
 	
 	enter_name(pip, ino, name);
+	
+	return ino;
 }
 
 int creat_file(char* pathname){
@@ -233,10 +235,12 @@ int creat_file(char* pathname){
 		return 0;
 	}
 	
-	my_creat(pip, child);
+	int rino = my_creat(pip, child);
 	
 	pip->INODE.i_atime = time(0L);
 	pip->dirty = 1;
 	
 	iput(pip);
+	
+	return rino;
 }

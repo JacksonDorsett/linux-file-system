@@ -48,7 +48,7 @@ int ls_file(MINODE *mip, char *name)
   printf("%4d ", mip->INODE.i_uid); // uid 
 
   printf("%8d ", mip->INODE.i_size);
-  
+  printf("%8o ", mip->INODE.i_mode);
   // print time 
   strcpy(ftime, ctime(&mip->INODE.i_mtime) ); // print time in calendar form 
   ftime[ strlen( ftime)-1] = 0; // kill \n at end 
