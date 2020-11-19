@@ -58,7 +58,7 @@ int ls_file(MINODE *mip, char *name)
   //printf(" -> %s", linkname ); // print linked name 
    
   printf("\n"); 
-  
+  //getchar();
 }
 
 int ls_dir(MINODE *mip)

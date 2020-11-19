@@ -239,3 +239,47 @@ int findino(MINODE *mip, u32 *myino) // myino = ino of . return ino of ..
    }
   
 }
+
+int tst_bit(char *buf, int bit){
+	return buf[bit / 8] & (1 << (bit % 8));
+}
+int set_bit(char *buf, int bit){
+	buf[bit/8] |= (1 << (bit % 8));
+	return 1;
+}
+
+int ialloc(int dev){
+	int i;
+	char buf[BLKSIZE];
+	
+	//read inode_bitmap block
+	get_block(dev, imap, buf);
+	
+	for(int i = 0; i < ninodes; i++){
+		if(tst_bit(buf,i) == 0){
+			set_bit(buf, i);
+			put_block(dev, imap, buf);
+			printf("allocated ino = %d\n", i + 1);
+			return i + 1;
+		}
+	}
+	return 0;
+}
+
+int balloc(int dev){
+	int i;
+	char buf[BLKSIZE];
+	
+	//read block bitmap block
+	get_block(dev, bmap, buf);
+	
+	for (int i = 0; i < nblocks; i++){
+		if(tst_bit(buf,i) == 0){
+			set_bit(buf, i);
+			put_block(dev,bmap,buf);
+			printf("allocated block = %d\n", i + 1);
+			return i + 1;
+		}
+	}
+	return 0;
+}
