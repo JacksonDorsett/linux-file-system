@@ -32,7 +32,7 @@ MINODE *iget();
 #include "util.c"
 #include "cd_ls_pwd.c"
 #include "mkdir_creat.c"
-
+#include "link_unlink.c"
 int init()
 {
   int i, j;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[ ])
 {
   int ino;
   char buf[BLKSIZE];
-  char line[128], cmd[32], pathname[128];
+  char line[128], cmd[32], pathname[128], pathname2[128];
 
   if (argc > 1)
     disk = argv[1];
@@ -115,16 +115,17 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n", root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|link|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
     if (line[0]==0)
        continue;
     pathname[0] = 0;
+    pathname2[0] = 0;
 
-    sscanf(line, "%s %s", cmd, pathname);
-    printf("cmd=%s pathname=%s\n", cmd, pathname);
+    sscanf(line, "%s %s %s", cmd, pathname, pathname2);
+    printf("cmd=%s pathname=%s pathname2 =%s\n", cmd, pathname, pathname2);
   
     if (strcmp(cmd, "ls")==0)
        ls(pathname);
@@ -136,6 +137,8 @@ int main(int argc, char *argv[ ])
 		make_dir(pathname);
 	if (strcmp(cmd, "creat")==0)
 		creat_file(pathname);
+	if (strcmp(cmd, "link")==0)
+		mylink(pathname, pathname2);
     if (strcmp(cmd, "quit")==0)
        quit();
   }

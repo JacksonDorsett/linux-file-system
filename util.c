@@ -162,6 +162,7 @@ int getino(char *pathname)
       iput(mip);
       return 0;
     }
+    printf("name[%d] = %s\n", i, name[n-1]);
     ino = search(mip, name[i]);
     if(!ino){
       printf("no such component name %s\n");
