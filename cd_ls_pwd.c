@@ -64,7 +64,7 @@ int ls_file(MINODE *mip, char *name)
 int ls_dir(MINODE *mip)
 {
   //printf("ls_dir: list CWD's file names; YOU do it for ls -l\n");
-
+  	
   char buf[BLKSIZE], temp[256];
   DIR *dp;
   char *cp;
@@ -109,8 +109,13 @@ int ls(char *pathname)
      
      }
      MINODE * wd = iget(dev, ino);
+     if(S_ISDIR(wd->INODE.i_mode)){
+     	ls_dir(wd);
+  	 }
+     else{
+     	printf("error: %s is not a directory\n", pathname);
+     }
      
-     ls_dir(wd);
      iput(wd);
   }
 }
