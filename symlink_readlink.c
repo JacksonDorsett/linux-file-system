@@ -44,6 +44,20 @@ int mysymlink(char * oldName, char * newName){
 	return 1;
 }
 
-int read_link(char * pathname){
-
+char * read_link(char * pathname, char * link){
+	int ino = getino(pathname);
+	if(ino == 0){
+		printf("error: %s does not exist\n", pathname);
+		return 0;
+	}
+	MINODE * mip = iget(dev, ino);
+	
+	if(!S_ISLNK(mip->INODE.i_mode)){
+		printf("error: %s is not a symbolic link file\n", pathname);
+		return 0;
+	}
+	
+	memcpy(link, mip->INODE.i_block, mip->INODE.i_size);
+	return link;
+	
 }

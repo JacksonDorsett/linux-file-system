@@ -142,6 +142,11 @@ int main(int argc, char *argv[ ])
 		mylink(pathname, pathname2);
 	if (strcmp(cmd, "symlink") == 0)
 		mysymlink(pathname, pathname2);
+	if (strcmp(cmd, "readlink")== 0){
+		char lnk[64];
+		read_link(pathname, lnk);
+		printf("link = %s\n", lnk);
+	}
     if (strcmp(cmd, "quit")==0)
        quit();
   }
