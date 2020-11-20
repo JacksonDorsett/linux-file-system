@@ -34,7 +34,7 @@ int mysymlink(char * oldName, char * newName){
 	MINODE * nMip = iget(dev, ino);
 	
 	nMip->INODE.i_mode = 0120644;
-	printf("ino = %d, mode = %x\n", ino, nMip->INODE.i_mode);
+	//printf("ino = %d, mode = %x\n", ino, nMip->INODE.i_mode);
 	memcpy((char *)nMip->INODE.i_block, oldName, strlen(oldName) + 1);
 	
 	nMip->INODE.i_size = strlen(oldName);
@@ -42,6 +42,12 @@ int mysymlink(char * oldName, char * newName){
 	iput(nMip);
 	
 	return 1;
+}
+
+char * myreadlink(MINODE * node, char * link){
+	memcpy(link, node->INODE.i_block, node->INODE.i_size);
+	return link;
+
 }
 
 char * read_link(char * pathname, char * link){
@@ -57,7 +63,8 @@ char * read_link(char * pathname, char * link){
 		return 0;
 	}
 	
-	memcpy(link, mip->INODE.i_block, mip->INODE.i_size);
-	return link;
+	return myreadlink(mip, link);
+	
+	
 	
 }

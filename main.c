@@ -29,11 +29,12 @@ int nblocks, ninodes, bmap, imap, inode_start;
 
 MINODE *iget();
 
+#include "symlink_readlink.c"
 #include "util.c"
 #include "cd_ls_pwd.c"
 #include "mkdir_creat.c"
 #include "link_unlink.c"
-#include "symlink_readlink.c"
+
 int init()
 {
   int i, j;
@@ -116,7 +117,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n", root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|link|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|link|symlink|readlink|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 

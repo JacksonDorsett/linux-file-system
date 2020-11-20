@@ -65,7 +65,7 @@ int enter_name(MINODE *pip, int ino, char *name){
 		
 		printf("step to LAST entry in data block %d\n",ip->i_block[i]);
 		while (cp + dp->rec_len < buf + BLKSIZE){
-			printf("%s\n", dp->name);
+			//printf("%s\n", dp->name);
 			
 			
 			cp += dp->rec_len;
@@ -73,23 +73,23 @@ int enter_name(MINODE *pip, int ino, char *name){
 		}
 		int remain = dp->rec_len - 4*((8 + dp->name_len + 3)/4);
 		dp->rec_len = 4*((8 + dp->name_len + 3)/4);
-		printf("%s rec_len: %d", dp->name, dp->rec_len); 
-		printf("remain: %d\n", remain);
+		//printf("%s rec_len: %d", dp->name, dp->rec_len); 
+		//printf("remain: %d\n", remain);
 		cp += dp->rec_len;
 		dp = (DIR *)cp;
 		
 
-		printf("remain: %d\n", remain);
+		//printf("remain: %d\n", remain);
 		if (remain >= need_length){
-			printf("cur name: %s\n", dp->name);	
+			//printf("cur name: %s\n", dp->name);	
 			dp->inode = ino;
 			short rlen = remain;
-			printf("rlen: %d\n", rlen);
+			//printf("rlen: %d\n", rlen);
 			dp->rec_len = rlen;
 			dp->name_len = strlen(name);
 			
 			strcpy(dp->name, name);
-			printf("%s\n\n", dp->name);
+			//printf("%s\n\n", dp->name);
 			put_block(dev, ip->i_block[i], buf);
 			return 1;
 		}
@@ -97,12 +97,12 @@ int enter_name(MINODE *pip, int ino, char *name){
 		put_block(dev, ip->i_block[i], buf);
 	}
 	
-	printf("cur name: %s\n", dp->name);	
+	//printf("cur name: %s\n", dp->name);	
 	int bno = balloc(dev);
 	ip->i_block[i] = bno;
 	dp->inode = ino;
 	short rlen = BLKSIZE - 4*((8 + strlen(name) + 3) / 4);
-	printf("rlen: %d\n", rlen);
+	//printf("rlen: %d\n", rlen);
 	dp->rec_len = rlen;
 	dp->name_len = strlen(name);
 	
@@ -131,10 +131,10 @@ int make_dir(char * pathname){
 	strcpy(parent,dirname(buf));
 	strcpy(buf, pathname);
 	strcpy(child, basename(buf));
-	printf("parent: %s, child: %s\n",parent,child);
+	//printf("parent: %s, child: %s\n",parent,child);
 	
 	int pino = getino(parent);
-	printf("pino: %d\n", pino);
+	//printf("pino: %d\n", pino);
 	
 	MINODE * pip = iget(dev, pino);
 
