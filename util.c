@@ -228,7 +228,9 @@ int findino(MINODE *mip, u32 *myino) // myino = ino of . return ino of ..
    cp = sbuf;
    while(cp < sbuf + BLKSIZE){
      strncpy(temp, dp->name, dp->name_len);
+     //just nulls out the end
      temp[dp->name_len] = 0;
+     //if . it points to itself
      if(!strcmp(temp, ".")){
        *myino = dp->inode;
      }
@@ -249,6 +251,10 @@ int set_bit(char *buf, int bit){
 	return 1;
 }
 
+int clr_bit(char *buf, int bit){
+  buf[bit/8] &= ~(1<<(bit%8));
+}
+
 int ialloc(int dev){
 	int i;
 	char buf[BLKSIZE];
@@ -267,6 +273,26 @@ int ialloc(int dev){
 	return 0;
 }
 
+int idealloc(int dev,int ino){
+  //this might be poorly written just a heads up
+  int i;
+  char buf[BLKSIZE];
+  //just gonna hope this is a predefined function
+
+  /*MTABLE *mp = (MTABLE *)get_mtable(dev);
+  if(ino > mp->ninodes){
+    printf("inumber %d out of range\n", ino);
+    return;
+  }*/
+
+  //get inode inside bitmap block
+  get_block(dev, imap, buf);
+  clr_bit(buf, ino-1);
+  //write buf back
+  put_block(dev, imap, buf);
+  incFreeInodes(dev);
+}
+
 int balloc(int dev){
 	int i;
 	char buf[BLKSIZE];
@@ -283,4 +309,29 @@ int balloc(int dev){
 		}
 	}
 	return 0;
+}
+
+int bdealloc(int dev, int bno){
+  char buf[1024];
+	get_block(dev, bno, buf);
+  clr_bit(buf, bno); //goes straight to the bno
+  put_block(dev, bmap, buf);
+  printf("deallocated block= %d\n", bno);
+  return bno;
+}
+
+int incFreeInodes(int dev)
+{
+	char buf[BLKSIZE];
+
+	// inc free inodes count in SUPER and GD
+	get_block(dev, 1, buf);
+	sp = (SUPER *)buf;
+	sp->s_free_inodes_count++;
+	put_block(dev, 1, buf);
+
+	get_block(dev, 2, buf);
+	gp = (GD *)buf;
+	gp->bg_free_inodes_count++;
+	put_block(dev, 2, buf);
 }
