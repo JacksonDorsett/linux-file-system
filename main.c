@@ -31,9 +31,12 @@ MINODE *iget();
 
 #include "symlink_readlink.c"
 #include "util.c"
+#include "open_close.c"
 #include "cd_ls_pwd.c"
+#include "read_cat.c"
 #include "mkdir_creat.c"
 #include "link_unlink.c"
+
 
 int init()
 {
@@ -147,6 +150,38 @@ int main(int argc, char *argv[ ])
 		char lnk[64];
 		read_link(pathname, lnk);
 		printf("link = %s\n", lnk);
+	}
+	if (!strcmp("open", cmd)){
+		printf("%d\n\n", pathname2[0] - '0');
+		open_file(pathname,pathname2[0] - '0');
+	}
+	if (!strcmp(cmd, "close")){
+		int fd;
+		sscanf(pathname, "%d", &fd);
+		printf("fd = %d\n", fd);
+		close_file(fd);
+	}
+	if(!strcmp(cmd, "pfd")){
+		pfd();
+	}
+	if(!strcmp(cmd, "cat")){
+		my_cat(pathname);
+	}
+	if (!strcmp(cmd, "read")){
+		int fd;
+		int nbytes;
+		char buf[BLKSIZE];
+		sscanf(pathname, "%d", &fd);
+		sscanf(pathname2, "%d", &nbytes);
+		read_file(fd, buf, nbytes);
+		printf("%s\n",buf);
+	}
+	if(!strcmp(cmd, "lseek")){
+		int fd;
+		int position;
+		sscanf(pathname, "%d", &fd);
+		sscanf(pathname2, "%d", &position);
+		my_lseek(fd, position);
 	}
     if (strcmp(cmd, "quit")==0)
        quit();

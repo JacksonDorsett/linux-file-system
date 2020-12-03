@@ -249,6 +249,10 @@ int set_bit(char *buf, int bit){
 	return 1;
 }
 
+int clr_bit(char *buf, int bit){
+	buf[bit/8] &= (0 << (bit % 8));
+}
+
 int ialloc(int dev){
 	int i;
 	char buf[BLKSIZE];
@@ -283,4 +287,56 @@ int balloc(int dev){
 		}
 	}
 	return 0;
+}
+
+int incFreeInodes(dev){
+	char buf[BLKSIZE];
+	get_block(dev, 1, buf);
+	SUPER *sp = (SUPER *) buf;
+	sp->s_free_inodes_count++;
+	put_block(dev,1,buf);
+	get_block(dev, 2,buf);
+	GD * gp = (GD*) buf;
+	gp->bg_free_inodes_count++;
+	put_block(dev, 2, buf);
+}
+
+int idalloc(int dev, int ino){
+	int i;
+	char buf[BLKSIZE];
+	
+	if (ino > ninodes){
+		printf("inumber out of range\n");
+		return;
+	}
+	get_block(dev, imap, buf);
+	clr_bit(buf, ino-1);
+	put_block(dev, imap, buf);
+	incFreeInodes(dev);
+}
+
+int incFreeBlocks(dev){
+	char buf[BLKSIZE];
+	get_block(dev, 1, buf);
+	SUPER *sp = (SUPER *) buf;
+	sp->s_free_blocks_count++;
+	put_block(dev,1,buf);
+	get_block(dev, 2,buf);
+	GD * gp = (GD*) buf;
+	gp->bg_free_blocks_count++;
+	put_block(dev, 2, buf);
+}
+
+int bdalloc(int dev, int bno){
+	int i;
+	char buf[BLKSIZE];
+	
+	if (bno > nblocks){
+		printf("bnumber out of range\n");
+		return;
+	}
+	get_block(dev, bmap, buf);
+	clr_bit(buf, bno-1);
+	put_block(dev, bmap, buf);
+	incFreeInodes(dev);
 }
