@@ -142,6 +142,8 @@ int main(int argc, char *argv[ ])
 		make_dir(pathname);
 	if (strcmp(cmd, "creat")==0)
 		creat_file(pathname);
+  if (strcmp(cmd, "creat")==0)
+		(pathname);
 	if (strcmp(cmd, "link")==0)
 		mylink(pathname, pathname2);
 	if (strcmp(cmd, "symlink") == 0)
