@@ -252,11 +252,7 @@ int set_bit(char *buf, int bit){
 }
 
 int clr_bit(char *buf, int bit){
-<<<<<<< HEAD
 	buf[bit/8] &= (0 << (bit % 8));
-=======
-  buf[bit/8] &= ~(1<<(bit%8));
->>>>>>> 1ddcbb69afa8a0b80b8bd94299ae661bdefceab4
 }
 
 int ialloc(int dev){
