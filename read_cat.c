@@ -110,7 +110,7 @@ int my_cat(char * filename){
 	int fd = open_file(filename, 0);
 
 	while (n = read_file(fd, mybuf,1024)){
-		printf("read %d bytes\n",n);
+		//printf("read %d bytes\n",n);
 		mybuf[n] = 0;
 		
 		for(int i = 0; i < n;++i){

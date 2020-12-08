@@ -32,10 +32,12 @@ MINODE *iget();
 #include "symlink_readlink.c"
 #include "util.c"
 #include "open_close.c"
+#include "rmdir.c"
 #include "cd_ls_pwd.c"
 #include "read_cat.c"
 #include "mkdir_creat.c"
 #include "link_unlink.c"
+#include "write_cp.c"
 
 
 int init()
@@ -120,7 +122,7 @@ int main(int argc, char *argv[ ])
   printf("root refCount = %d\n", root->refCount);
 
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|link|symlink|readlink|quit] ");
+    printf("[ls|cd|pwd|mkdir|read|write|cat|open|lseek|close|rmdir|creat|unlink|link|symlink|readlink|quit]\ninput command :  ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -128,6 +130,7 @@ int main(int argc, char *argv[ ])
        continue;
     pathname[0] = 0;
     pathname2[0] = 0;
+    
 
     sscanf(line, "%s %s %s", cmd, pathname, pathname2);
     printf("cmd=%s pathname=%s pathname2 =%s\n", cmd, pathname, pathname2);
@@ -152,6 +155,9 @@ int main(int argc, char *argv[ ])
 		char lnk[64];
 		read_link(pathname, lnk);
 		printf("link = %s\n", lnk);
+	}
+	if (strcmp(cmd, "unlink")==0){
+		my_unlink(pathname);
 	}
 	if (!strcmp("open", cmd)){
 		printf("%d\n\n", pathname2[0] - '0');
@@ -184,6 +190,27 @@ int main(int argc, char *argv[ ])
 		sscanf(pathname, "%d", &fd);
 		sscanf(pathname2, "%d", &position);
 		my_lseek(fd, position);
+	}
+	if(strcmp(cmd, "rmdir") ==0){
+		my_rmdir(pathname);
+	}
+	if(strcmp(cmd, "write")==0){
+		int fd;
+		int nbytes;
+		char buf[BLKSIZE];
+		bzero(buf, BLKSIZE);
+		sscanf(pathname, "%d", &fd);
+		sscanf(pathname2, "%d", &nbytes);
+		strtok(line, "\"");
+		char * p = strtok(0, "\"");
+		strtok(0,"\"");
+		strcpy(buf, p);
+		printf("buf = %s, line = %s\n", buf, line);
+		getchar();
+		write_file(fd, buf, nbytes);
+	}
+	if(strcmp(cmd, "cp") == 0){
+		my_cp(pathname, pathname2);
 	}
     if (strcmp(cmd, "quit")==0)
        quit();
