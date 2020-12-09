@@ -38,6 +38,7 @@ MINODE *iget();
 #include "mkdir_creat.c"
 #include "link_unlink.c"
 #include "write_cp.c"
+#include "Misc_Level1.c"
 
 
 int init()
@@ -216,6 +217,15 @@ int main(int argc, char *argv[ ])
 	}
 	if(strcmp(cmd, "cp") == 0){
 		my_cp(pathname, pathname2);
+	}
+  if(strcmp(cmd, "stat") == 0){
+		mystat(pathname);
+	}
+  if(strcmp(cmd, "chmod") == 0){
+		mychmod(pathname, pathname2);
+	}
+  if(strcmp(cmd, "utime") == 0){
+		myutime(pathname);
 	}
     if (strcmp(cmd, "quit")==0)
        quit();
