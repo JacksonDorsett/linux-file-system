@@ -11,6 +11,7 @@ extern char *name[32];  // assume at most 32 components in pathname
 extern int   n;      
 extern MINODE minode[NMINODE];
 
+//for each MINODE finds first empty and available MINODE and makes it in use
 MINODE *mialloc(){
   int i;
   for(i = 0; i < NMINODE; i++){
@@ -24,21 +25,26 @@ MINODE *mialloc(){
   return 0;
 }
 
+//just makes the refcount of a MINODE have a refcount of 0
 int midalloc(MINODE *mip){
   mip->refCount = 0;
 }
 
+//get block takes a dev and blk, basically retrieves it and writes it into buffer
 int get_block(int dev, int blk, char *buf)
 {
+    //lseek changes the offset of a file
    lseek(dev, (long)blk*BLKSIZE, 0);
    read(dev, buf, BLKSIZE);
-}   
+}
+//same as get block but instead of reading it writes to the dev
 int put_block(int dev, int blk, char *buf)
 {
    lseek(dev, (long)blk*BLKSIZE, 0);
    write(dev, buf, BLKSIZE);
 }   
 
+//Just goes thru and parses the pathname into individual names , in name
 int tokenize(char *pathname)
 {
   // copy pathname into gpath[]; tokenize it into name[0] to name[n-1]
@@ -51,7 +57,7 @@ int tokenize(char *pathname)
   }
 }
 
-
+//retrieves a MINODE when given a dev and ino
 MINODE *iget(int dev, int ino)
 {
   // return minode pointer of loaded INODE=(dev, ino)
@@ -84,6 +90,7 @@ MINODE *iget(int dev, int ino)
   return mip;
 }
 
+//puts the inode back and records info
 void iput(MINODE *mip)
 {
   // dispose of minode pointed by mip
@@ -177,9 +184,9 @@ int getino(char *pathname)
   
 }
 
+//basically the inverse of search, looks thru parent for the inode and returns the name
 int findmyname(MINODE *parent, u32 myino, char *myname) 
 {
-  // WRITE YOUR code here:
   // search parent's data block for myino;
   // copy its name STRING to myname[ ];
   
@@ -213,6 +220,7 @@ int findmyname(MINODE *parent, u32 myino, char *myname)
   
 }
 
+// reverse of the getino, has the inode want to figure out wh
 int findino(MINODE *mip, u32 *myino) // myino = ino of . return ino of ..
 {
   // mip->a DIR minode. Write YOUR code to get mino=ino of .
@@ -243,25 +251,28 @@ int findino(MINODE *mip, u32 *myino) // myino = ino of . return ino of ..
   
 }
 
+//Just checks what the bit is
 int tst_bit(char *buf, int bit){
 	return buf[bit / 8] & (1 << (bit % 8));
 }
+//sets a bit to one
 int set_bit(char *buf, int bit){
 	buf[bit/8] |= (1 << (bit % 8));
 	return 1;
 }
-
+//clr_bit just makes a bit 0
 int clr_bit(char *buf, int bit){
 	buf[bit/8] &= (0 << (bit % 8));
 }
 
+//inode allocate; 
 int ialloc(int dev){
 	int i;
 	char buf[BLKSIZE];
 	
 	//read inode_bitmap block
 	get_block(dev, imap, buf);
-	
+	//allocates one of the nodes in the imap
 	for(int i = 0; i < ninodes; i++){
 		if(tst_bit(buf,i) == 0){
 			set_bit(buf, i);
@@ -273,6 +284,7 @@ int ialloc(int dev){
 	return 0;
 }
 
+//inode deallocation, gets the imap clears the bit puts the block back to imap and Frees Inodes
 int idealloc(int dev,int ino){
   //this might be poorly written just a heads up
   int i;
@@ -293,13 +305,14 @@ int idealloc(int dev,int ino){
   incFreeInodes(dev);
 }
 
+//block allocation:
 int balloc(int dev){
 	int i;
 	char buf[BLKSIZE];
 	
 	//read block bitmap block
 	get_block(dev, bmap, buf);
-	
+	//allocates the block and puts it back to bmap
 	for (int i = 0; i < nblocks; i++){
 		if(tst_bit(buf,i) == 0){
 			set_bit(buf, i);
@@ -311,7 +324,7 @@ int balloc(int dev){
 	return 0;
 }
 
-
+//Literally just increases the free inodes count
 int incFreeInodes(dev){
 	char buf[BLKSIZE];
 	get_block(dev, 1, buf);
@@ -324,6 +337,7 @@ int incFreeInodes(dev){
 	put_block(dev, 2, buf);
 }
 
+//inode deallocate
 int idalloc(int dev, int ino){
 	int i;
 	char buf[BLKSIZE];
@@ -332,12 +346,14 @@ int idalloc(int dev, int ino){
 		printf("inumber out of range\n");
 		return;
 	}
+  //just get imap clear a map and put back
 	get_block(dev, imap, buf);
 	clr_bit(buf, ino-1);
 	put_block(dev, imap, buf);
 	incFreeInodes(dev);
 }
 
+//Literally just increases free blocks count
 int incFreeBlocks(dev){
 	char buf[BLKSIZE];
 	get_block(dev, 1, buf);
@@ -350,6 +366,7 @@ int incFreeBlocks(dev){
 	put_block(dev, 2, buf);
 }
 
+//block dealloc:
 int bdalloc(int dev, int bno){
 	int i;
 	char buf[BLKSIZE];
@@ -358,18 +375,21 @@ int bdalloc(int dev, int bno){
 		printf("bnumber out of range\n");
 		return;
 	}
+  //gets the bmap and sets the bno to zero and puts back
 	get_block(dev, bmap, buf);
 	clr_bit(buf, bno-1);
 	put_block(dev, bmap, buf);
 	incFreeInodes(dev);
 }
 
+//Truncate: Deletes all of the inner iblocks data, essentially zeroes it out
 int truncate(MINODE *mip){
+  //searches thru iblocks
 	for(int i = 0; i < 14; i++){
 		if(mip->INODE.i_block[i] == 0){
 			break;
 		}
-		
+		//If the 12th INODE, clear all of the sub-blocks
 		if(i == 12){
 			char buf[BLKSIZE];
 			get_block(dev, mip->INODE.i_block[12], buf);
@@ -383,14 +403,16 @@ int truncate(MINODE *mip){
 				ref++;
 				//getchar();
 			}
+      //put the block back
 			put_block(dev, mip->INODE.i_block[12], buf);
 
 		}
-		
+		//if the 13th block
 		if(i == 13){
 			char buf[BLKSIZE];
 			get_block(dev, mip->INODE.i_block[12], buf);
 			int * ref = buf;
+      //repeat from when i==12
 			for(i = 0; i<256;i++){
 				if(*ref == 0){
 					break;
@@ -398,6 +420,7 @@ int truncate(MINODE *mip){
 				char innerbuf[BLKSIZE];
 				get_block(dev, mip->INODE.i_block[*ref], buf);
 				int * ref2 = innerbuf;
+        //this time need to go one step deaper and zero out all of the inner refs
 				for(int j = 0; j < 256; j++){
 					if(*ref2 == 0){
 						break;
@@ -410,21 +433,20 @@ int truncate(MINODE *mip){
 				bdalloc(dev, *ref);
 				ref++;
 			}
-			
+			//basically puts it back to the block the fact that all refs have been zeroed out
 			put_block(dev, mip->INODE.i_block[13], buf);
-
 		}
-		
-		
+		//dealloc the block
 		bdalloc(dev, mip->INODE.i_block[i]);
 	}
-	
+  //update time and zero out the size
 	mip->INODE.i_mtime = mip->INODE.i_atime = mip->INODE.i_ctime = time(0);
 	
 	mip->INODE.i_size = 0;
 	return 1;
 }
 
+//clear block zeroes out a block.
 int clear_block(int dev, int blk){
 	char buf[BLKSIZE];
 	get_block(dev, blk, buf);

@@ -15,10 +15,13 @@ int chdir(char *pathname)
       iput(mip);
       return -1;
    }
+   //puts the changes to the dev and moves on
    iput(running->cwd);
+   //changes the running to the minode
    running->cwd = mip;
    return 1;
 }
+
 
 int ls_file(MINODE *mip, char *name)
 {
@@ -28,7 +31,7 @@ int ls_file(MINODE *mip, char *name)
   int r, i;
   char ftime[64];
 
-  
+  //prints the stuff to signify what type of ffile it is 
   if(S_ISDIR(mip->INODE.i_mode)){
      printf("%c",'d');
   }
@@ -38,11 +41,13 @@ int ls_file(MINODE *mip, char *name)
   if(S_ISLNK(mip->INODE.i_mode)){
      printf("%c",'l');
   }
+  //goes thru the 8 steps to check
   for (i = 8; i >= 0; i--){ 
      if (mip->INODE.i_mode & (1 << i)) // print r | w | x 
         printf("%c", t1[i]); 
      else printf("%c", t2[i]); // or print - 
   }
+  //prints the values for INODE info
   printf("%4d ", mip->INODE.i_links_count); // link count 
   printf("%4d ", mip->INODE.i_gid); // gid 
   printf("%4d ", mip->INODE.i_uid); // uid 
@@ -86,7 +91,7 @@ int ls_dir(MINODE *mip)
      //printf("ino = %d", ino);
      
      MINODE * node = iget(dev, ino);
-
+      //simply calls the ls
      ls_file(node, dp->name);
      iput(node);
      
@@ -110,6 +115,7 @@ int ls(char *pathname)
         return -1;
      
      }
+     //wd is the inode representing ino
      MINODE * wd = iget(dev, ino);
      if(S_ISDIR(wd->INODE.i_mode)){
      	ls_dir(wd);
@@ -117,7 +123,7 @@ int ls(char *pathname)
      else{
      	printf("error: %s is not a directory\n", pathname);
      }
-     
+     //puts info back to the wd and dec refcount
      iput(wd);
   }
 }
@@ -128,6 +134,7 @@ int ndir;
 int rpwd(MINODE *wd){
   char buf[64];
   char temp[64];
+  //wd is work dir
   if(wd == root){
     return;
   }
@@ -141,17 +148,17 @@ int rpwd(MINODE *wd){
   ndir++;
   */
   strncpy(temp, buf, len);
+  //recursive call to look into the dir
   rpwd(pip);
   //buf[strlen(buf)] = 0;
   //printf("/%s", temp);
   putchar('/');
+  //used for building the path
   for(int i = 0; i < len; i++){
      if(isalnum(buf[i])) putchar(buf[i]);
   }
   //printf("hello");
   iput(pip);
-  
-  
   
 }
 
@@ -164,6 +171,7 @@ char *pwd(MINODE *wd)
   }
   else{
      ndir = 0;
+     //this calls a recursive function that breaks down the working directory
      rpwd(wd);
      //for(int i = ndir-1; i >= 0; --i){
      //	printf("/%s",dirbuf[i]);
@@ -173,6 +181,4 @@ char *pwd(MINODE *wd)
   printf("\n");
   
 }
-
-
 

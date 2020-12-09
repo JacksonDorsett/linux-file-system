@@ -1,3 +1,4 @@
+//write function called from write_file
 int mywrite(int fd, char buf[], int nbytes){
 
     int count =0;
@@ -5,11 +6,13 @@ int mywrite(int fd, char buf[], int nbytes){
 	OFT * oftp = running->fd[fd];
     MINODE *mip = oftp->mptr;
 	INODE *ip   = &mip->INODE;
+    //while there are still bytes to add
     while(nbytes){
         //getting the compute logical blockand the compute start byte
         int lbk = oftp->offset/BLKSIZE;
         int start = oftp->offset % BLKSIZE;
         int blk = 0;
+        //if it can be fit in the 12 blks
         if (lbk<12){
             if(ip->i_block[lbk]==0){
                 mip->INODE.i_block[lbk]=balloc(mip->dev);
@@ -20,9 +23,10 @@ int mywrite(int fd, char buf[], int nbytes){
         }
         else if(lbk>=12 && lbk < 256 + 12){ //for indirect blocks
        		char ibuf[BLKSIZE];
+            //alloc block if it 0
             if(mip->INODE.i_block[12]==0){
                 mip->INODE.i_block[12] = balloc(mip->dev);
-                
+                // zeroes out the block
                 clear_block(dev, mip->INODE.i_block[12]);
                 
                 //basically just need to make sure there is a block in the i_block
@@ -32,9 +36,10 @@ int mywrite(int fd, char buf[], int nbytes){
             // = mip->INODE->i_block[12];
             int * p = ibuf;
             get_block(dev, ibuf, BLKSIZE);
-            
+            //adjusts the offset and assigns a blk value
             blk = *(p+(lbk - 12));
             if (blk==0){
+                //if it = 0 then we need to balloc
              	blk = balloc(mip->dev);
                 *(p + lbk) = blk;
                	put_block(dev, blk, BLKSIZE);
@@ -44,6 +49,7 @@ int mywrite(int fd, char buf[], int nbytes){
             }
             //else needs to go to the next block
         }
+        //this is for when it need double block dealloc
         else{
         	printf("lbk = %d\n", lbk);
             //Not implimented but should be likek double the amount.
@@ -55,6 +61,7 @@ int mywrite(int fd, char buf[], int nbytes){
 			char indirbuf[BLKSIZE];
 			get_block(mip->dev, mip->INODE.i_block[13],indirbuf);
 			int * ip = indirbuf;
+            //same offsetting to find truly where ip should be placed (first ref)
 			ip += (lbk - 13 - (lbk - 12) % 256) / 256;
 			if(*ip == 0){
 				*ip = balloc(dev);
@@ -63,12 +70,12 @@ int mywrite(int fd, char buf[], int nbytes){
 				put_block(dev, mip->INODE.i_block[13], indirbuf);
 				
 			}
+            //second int * finds indexing for the second part
 			char dindirbuf[BLKSIZE];
 			int * dip;
-			
 			get_block(mip->dev, *ip, dindirbuf);
 			dip = dindirbuf;
-
+            //finds offset for the block wher to start writing
 			dip = dip + ((lbk - 12) % 256);
 			//get values for dindir
 			if(*dip == 0){
@@ -85,8 +92,10 @@ int mywrite(int fd, char buf[], int nbytes){
         get_block(mip->dev, blk, wbuf); //read disk block into wbuf[]
         char *cp = wbuf + start;
         int remain = BLKSIZE - start;
+        //while space remains
         while (remain>0){
         	//printf("remain: %d\n", remain);
+            //update of all the bytes, didn't have time to not do byte by byte
             *cp++ = *buf++;
             count++;
             nbytes--;
@@ -101,12 +110,16 @@ int mywrite(int fd, char buf[], int nbytes){
         }
         put_block(mip->dev, blk, wbuf);
     }
+    //dirty because it updated and will notify
     mip->dirty = 1;
+    //put back
     iput(mip);
     return count;
 }
 
+//called from main
 int write_file(int fd, char buf[BLKSIZE], int nbytes){
+    //basic checks, is open and is actually some kind of write node
 	if (running->fd[fd] == 0){
 		printf("fd %d is not open\n", fd);
 		return -1;
@@ -119,16 +132,19 @@ int write_file(int fd, char buf[BLKSIZE], int nbytes){
     return mywrite(fd, buf, nbytes);
 }
 
+// copies from one spot to another, called from main
 int my_cp(char * src, char * dst){
     char buf[BLKSIZE];
     int fd,gd;
     int n;
+    //open the src
     fd=open_file(src,0);
     
     if(fd == -1){
     	printf("src file could not be opened\n");
     	return -1;
     }
+    //create a file if there is none already
     int ino = getino(dst);
     if (ino == 0){
     	creat_file(dst);
@@ -136,9 +152,11 @@ int my_cp(char * src, char * dst){
     //fd=open src for READ
     gd=open_file(dst,1);
     //gd=open dst for WR|CREAT;
+    //while the readfile is being done write a file
     while(n=read_file(fd, buf, BLKSIZE)){
         write_file(gd, buf, n); //notice the n in write
     }
+    //close both of the files
     close_file(fd);
     close_file(gd);
 }

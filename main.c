@@ -47,7 +47,7 @@ int init()
   PROC   *p;
 
   printf("init()\n");
-
+  //clears all of the MINODES
   for (i=0; i<NMINODE; i++){
     mip = &minode[i];
     mip->dev = mip->ino = 0;
@@ -55,6 +55,7 @@ int init()
     mip->mounted = 0;
     mip->mptr = 0;
   }
+  //Just inits the procs
   for (i=0; i<NPROC; i++){
     p = &proc[i];
     p->pid = i;
@@ -84,6 +85,7 @@ int main(int argc, char *argv[ ])
     disk = argv[1];
 
   printf("checking EXT2 FS ....");
+  //Opens any disks that may be passed in
   if ((fd = open(disk, O_RDWR)) < 0){
     printf("open %s failed\n", disk);
     exit(1);
@@ -98,11 +100,13 @@ int main(int argc, char *argv[ ])
   if (sp->s_magic != 0xEF53){
       printf("magic = %x is not an ext2 filesystem\n", sp->s_magic);
       exit(1);
-  }     
+  }
+  //reads the amount inodes an blocks from the superblock
   printf("EXT2 FS OK\n");
   ninodes = sp->s_inodes_count;
   nblocks = sp->s_blocks_count;
 
+  //get and assign the group descriptor
   get_block(dev, 2, buf); 
   gp = (GD *)buf;
 
@@ -110,8 +114,9 @@ int main(int argc, char *argv[ ])
   imap = gp->bg_inode_bitmap;
   inode_start = gp->bg_inode_table;
   printf("bmp=%d imap=%d inode_start = %d\n", bmap, imap, inode_start);
-
+  // go init all the MINODES and PROCS
   init();  
+  //mount the root node
   mount_root();
   printf("root refCount = %d\n", root->refCount);
 
@@ -120,7 +125,7 @@ int main(int argc, char *argv[ ])
   running->status = READY;
   running->cwd = iget(dev, 2);
   printf("root refCount = %d\n", root->refCount);
-
+  //the main loop
   while(1){
     printf("[ls|cd|pwd|mkdir|read|write|cat|open|lseek|close|rmdir|creat|unlink|link|symlink|readlink|quit]\ninput command :  ");
     fgets(line, 128, stdin);
@@ -131,7 +136,7 @@ int main(int argc, char *argv[ ])
     pathname[0] = 0;
     pathname2[0] = 0;
     
-
+    //gather what was entered
     sscanf(line, "%s %s %s", cmd, pathname, pathname2);
     printf("cmd=%s pathname=%s pathname2 =%s\n", cmd, pathname, pathname2);
   
@@ -217,6 +222,7 @@ int main(int argc, char *argv[ ])
   }
 }
 
+// Just shuts everything down
 int quit()
 {
   int i;

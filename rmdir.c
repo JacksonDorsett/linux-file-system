@@ -1,15 +1,18 @@
+//function called by both unlink and rmdir
 int rm_child(MINODE *parent, char *name){
 	printf("ino = %d\n", parent->ino);
 	printf("name: %s\n", name);
 	char buf[BLKSIZE], *cp;
 	DIR * dp1, * dp2 = 0;
+	//goes thru each of the iblocks[]
 	for(int i = 0; i < 12;++i){
 		printf("block: %d\n",parent->INODE.i_block[i]);
+		//if the iblock is empty just continue
 		if(parent->INODE.i_block[i] == 0){
 			continue;
 		}
+		//setting up the Block and two dir pointers to step thru the block
 		get_block(parent->dev, parent->INODE.i_block[i], buf);
-		
 		int remain = BLKSIZE;
 		char * namebuf[BLKSIZE];
 		int counted = 0;
@@ -19,7 +22,7 @@ int rm_child(MINODE *parent, char *name){
 		strncpy(namebuf, dp1->name, dp1->name_len);
 		namebuf[dp1->name_len] = 0;
 		printf("dp1->name = %s\n",namebuf);
-		
+		//while there is still space on the block, checks to find dir with the correct name
 		while(remain > 0 && strcmp(name, namebuf)){
 			if(!strcmp(dp1->name, name)){
 				break;
@@ -31,8 +34,8 @@ int rm_child(MINODE *parent, char *name){
 			
 			//printf("dp1->name = %s\n",namebuf);
 			//printf("dp2->rec_len: %d, remain = %d\n", dp2->rec_len, remain);
+			//moves the dir pointers along thru the dirs
 			cp = dp1;
-			
 			dp2 = dp1;
 			remain -= dp1->rec_len;
 			counted += dp1->rec_len;
@@ -51,7 +54,7 @@ int rm_child(MINODE *parent, char *name){
 			printf("dp2->name after = %s\n",namebuf);
 			printf("dp2->rlen after = %d\n",dp2->rec_len);
 		}
-		
+		//if remain ==0 then it just continues
 		if(remain == 0)
 			continue;
 		//only entry case
@@ -71,6 +74,7 @@ int rm_child(MINODE *parent, char *name){
 		//middle case
 		else{
 			//printf("enter middle\n");
+			//the amount that we are going to shift by
 			int len = dp1->rec_len;
 			//printf("rec_len: %d", dp1->rec_len);
 			//step forward
@@ -99,16 +103,18 @@ int rm_child(MINODE *parent, char *name){
 				
 
 			}*/
+			//sets name ready
 			bzero(namebuf, BLKSIZE);
 			strncpy(namebuf, dp1->name, dp1->name_len);
 			namebuf[dp1->name_len] = 0;
 			printf("dp1->name after = %s\n",namebuf);
 			printf("dp1->rlen after = %d\n",dp1->rec_len);
-			
+			//sets the last to the buf current
 			int bts = 0;
 			DIR * last = buf;
 			cp = last;
 			DIR * dp;
+			//looks for the last dir in the block to add the len to it
 			while(bts + last->rec_len < BLKSIZE){
 				bts += last->rec_len;
 				cp += last->rec_len;
@@ -116,6 +122,7 @@ int rm_child(MINODE *parent, char *name){
 				bzero(namebuf, BLKSIZE);
 				strncpy(namebuf, last->name, last->name_len);
 				namebuf[last->name_len] = 0;
+				//if the name matches set the dp = the searched dir
 				if(strcmp(name, namebuf) == 0){
 					dp = last;
 				}
@@ -128,9 +135,11 @@ int rm_child(MINODE *parent, char *name){
 			namebuf[last->name_len] = 0;
 			printf("dp1->name after = %s\n",namebuf);
 			printf("dp1->rlen after = %d\n",last->rec_len);
+			//have cp = the dp(dir of interest)
 			cp = dp;
-			
+			//next is the item after the item of choice
 			DIR * next = cp + dp->rec_len;
+			//distance from start of next to the beginning. Subtract that value from BLKSIZE and thats the amount left over
 			int bytes = BLKSIZE - ((char*)next - buf);
 			
 			printf("bytes: %d\n", bytes);
@@ -152,7 +161,7 @@ int rm_child(MINODE *parent, char *name){
 			*/
 			
 			//parent->INODE.i_size -= len;
-			
+			//put block back.
 			put_block(dev,parent->INODE.i_block[i],buf);
 			return 1;
 		}
@@ -160,7 +169,7 @@ int rm_child(MINODE *parent, char *name){
 
 }
 
-
+//main
 int my_rmdir(char *pathname){
     //getting ino of the pathname
     if (pathname[0] == '/'){
@@ -186,31 +195,29 @@ int my_rmdir(char *pathname){
 		printf("uids do not match\n");
 		return -1;
 	}
-	printf("test");
-	
-    //worry about Later
     //checks to see if the directory is a directory
     //int isDir = mip->INODE.i_mode == 0x41ED; //cause the 4 is important
     int isDir = (S_ISDIR(mip->INODE.i_mode));
     int isBusy = (mip->refCount)>1;
     int isEmpty = (mip->INODE.i_links_count == 2);
     
-    //Try looking for a way to traverse the blocks to manually search later
+    //Makes sur isDir isntBusy isEmpty
     if(!isDir || isBusy || !isEmpty){
         printf("Either not a Dir, is busy or isn't empty");
         iput(mip);
         return -1;
     }
     
-    //Assuming the check goes through
+    //Assuming the check goes through, search each of the iblocks
     for (int i=0; i<12;i++){
         if(mip->INODE.i_block[i]==0) //is null
             break;
+		//deallocates to prep for deletion
         bdalloc(mip->dev, mip->INODE.i_block[i]);
         idalloc(mip->dev, mip->ino);
         iput(mip);
     }
-
+	//deallocate the inode and put back to the block
     idalloc(mip->dev, mip->ino);
     iput(mip);
 
@@ -232,7 +239,7 @@ int my_rmdir(char *pathname){
     getchar();*/
     
     char buf[256];
-
+	//just gives parent and child names
     strcpy(buf, pathname);
 	char parent[128]; 
 	char child[128]; 
@@ -247,18 +254,18 @@ int my_rmdir(char *pathname){
     
 
     pip = iget(dev, pino);
-
+	//calls the rm_child and sends the inode and childname
     printf("pino: %d, ino %d\n", pino, ino);
     rm_child(pip, child);
-    //touch the mtime and atime once we get these functions set up
+    //touch the mtime and atime once we get these functions set up, and decrement link count
     pip->INODE.i_links_count--;
     pip->INODE.i_atime = pip->INODE.i_mtime = time(0);
     pip->dirty = 0;
+	//put the parent back without child
     iput(pip);
 
     return 1;
     //success
-    
 }
 
 
